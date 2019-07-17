@@ -1,4 +1,4 @@
-package ckb-wallet;
+package ckbwallet;
 
 import static org.junit.Assert.assertTrue;
 
