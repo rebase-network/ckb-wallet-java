@@ -1,19 +1,25 @@
 package ckbwallet;
 
 
+import org.apache.commons.codec.DecoderException;
+import org.apache.commons.codec.binary.Hex;
+
+import org.bitcoinj.core.ECKey;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.math.BigInteger;
+import java.security.InvalidAlgorithmParameterException;
 import java.security.KeyPairGenerator;
+import java.security.NoSuchAlgorithmException;
 import java.security.interfaces.ECPublicKey;
 import java.security.spec.ECFieldFp;
 import java.security.spec.ECGenParameterSpec;
-import java.security.InvalidAlgorithmParameterException;
-import java.security.NoSuchAlgorithmException;
 import java.security.spec.ECParameterSpec;
 import java.security.spec.ECPoint;
 import java.util.Arrays;
 
-import org.bitcoinj.core.ECKey;
 import blake.Blake2b;
+import bech32.Bech32;
 
 // https://nervosbj.github.io/teachbitcoin/cn/#/
 
@@ -21,6 +27,8 @@ public class App
 {
 
     static String personal = "ckb-default-hash";
+    static String prefixMainnet = "ckb";
+    static String prefixTestnet = "ckt";
 
     public static void main( String[] args)
     {
@@ -51,9 +59,15 @@ public class App
             byte[] blake2b = genBlake2b(pubKeyByte);
             byte[] blake160 = Arrays.copyOfRange(blake2b, 0, 20);
 
+            String testnetCkbAddr = genCkbAddr(prefixTestnet, blake160);
+            String mainnetCkbAddr = genCkbAddr(prefixMainnet, blake160);
+
             System.out.println("Privkey: 0x"+ privKey+ "\nPubKey: 0x" + pubKey);
             System.out.println("uncompressedPubKey: " + uncompressedPubKey);
             System.out.println("Blake160: 0x" + bytesToHexStr(blake160) );
+
+            System.out.println("TestnetAddr: " + testnetCkbAddr);
+            System.out.println("MainnetAddr: " + mainnetCkbAddr);
 
         } catch (InvalidAlgorithmParameterException | NoSuchAlgorithmException ex) {
             System.err.println("err:" + ex);
@@ -73,6 +87,37 @@ public class App
         return blake2b.digest();
     }
 
+
+    public static String genCkbAddr(String prefix, byte[] blake160){
+
+        String addr = "";
+
+        try {
+
+            byte[] typebin = Hex.decodeHex("01");
+            byte[] flag = Hex.decodeHex("00");
+
+            ByteArrayOutputStream outputStream = new ByteArrayOutputStream( );
+
+            outputStream.write(typebin);
+            outputStream.write(flag);
+            outputStream.write(blake160);
+
+            byte[] payload = outputStream.toByteArray();
+
+            byte[] converted = Bech32.convertBits(payload, 0, payload.length,8, 5, true);
+
+            addr = Bech32.encode(prefix, converted);
+
+        } catch (IOException | DecoderException e) {
+            e.printStackTrace();
+        }
+
+        return addr;
+
+
+    }
+
     public static String bytesToHexStr(byte[] b) {
         int len = b.length;
 
@@ -81,6 +126,16 @@ public class App
         for (int i = 0; i < len; i++){
             data += Integer.toHexString((b[i] >> 4) & 0xf);
             data += Integer.toHexString(b[i] & 0xf);
+        }
+        return data;
+    }
+
+    public static byte[] hexStrToBytes(String s) {
+        int len = s.length();
+        byte[] data = new byte[len / 2];
+        for (int i = 0; i < len; i += 2) {
+            data[i / 2] = (byte) ((Character.digit(s.charAt(i), 16) << 4)
+                    + Character.digit(s.charAt(i+1), 16));
         }
         return data;
     }
