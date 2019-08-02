@@ -43,7 +43,7 @@
       <artifactId>nervos-ckb-utils</artifactId>
       <version>0.17.0</version>
       <scope>system</scope>
-      <systemPath>/Users/zhouhe/blockchain/ckb-wallet-java/ckb-wallet/lib/utils-0.17.0.jar</systemPath>
+      <systemPath>${project.basedir}/libs/utils-0.17.0.jar</systemPath>
     </dependency>
   </dependencies>
 
